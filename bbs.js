@@ -1,33 +1,77 @@
-/*   モジュール読み込み   */
-var http = require("http");
-var querystring = require("querystring");
-var fs = require("fs");
+var http = require("http")
+    ,querystring = require("querystring")
+    ,readline = require("readline")
+    ,fs = require("fs");
 
-/*   http.Serverオブジェクトの作成   */
+var ADDRESS = 'localhost'
+    ,PORT = '5000';
+
 var server = http.createServer(onRequest);
 
-/*   サーバーの情報を格納する変数の宣言   */
-var ADDRESS = 'localhost';
-var PORT = '5000';
-
 function onRequest(request, response){
-    if(response.url == '/'){
-        if(request.method != 'POST'){
-            // GET リクエストが来た時の処理。
-            // 他のリクエストが来たときにどうしたらいいのか分からないので、とりあえず他もこれで処理します。
-        }
-    
-        if(request.method == 'POST'){
-            // POST リクエストが来た時の処理。テキストフォームと名前入力欄からデータを受け取り、保存する処理を行い、/postedに移動させる。
-        }
-
-    }else{
+    if(request.url != '/'){
+        
         response.writeHead(404, {'Content-Type': 'text/html; charset=UTF-8'});
         fs.readFile('./data/404.html', 'utf8', function(err, text){
-            console.log(err);
             response.write(text);
             response.end();
         });
+
+    }else{
+        if(request.method != 'POST'){
+            sendResponse();
+        }else{
+            request.data = '';
+            request.on('data', function(chunk){
+                request.data += chunk;
+            });
+            request.on('end',function(){
+                var query = querystring.parse(request.data);
+                data = query.author + '\n' + query.maintext .replace(/(\r\n|\n|\r)/g,'<br>') + '\n';
+                fs.appendFile('./data/data.txt', data,'utf8');
+                sendResponse();
+            });
+        }   
+    }
+
+    function sendResponse()
+    {
+        postCounter = 0;
+        // 読み込んだ行が名前なのか本文なのか判定するため。毎回+1して偶奇で判断
+        systemCnt = 0;
+        response.writeHead(200, {"Content-Type": "text/html; charset=UTF-8"});
+        writeHeader();
+        var rl = readline.createInterface({
+            input: fs.createReadStream('./data/data.txt')
+        });
+
+        rl.on('line', function(line){
+            if(systemCnt % 2 == 0){
+                // 名前
+                response.write("<dt>" + postCounter + " 名前:<b>" + line + "</b>");
+                postCounter += 1;
+            }else{
+                // 本文
+                response.write("<dd> " + line + "<br><br>");
+            }
+            systemCnt += 1;
+        })
+
+        rl.on('close', function(){
+            writeFooter();
+            response.end();
+        })
+    }
+    function writeHeader()
+    {
+        var headerText = fs.readFileSync('./data/header.txt', 'utf8');
+        response.write(headerText);
+    }
+
+    function writeFooter()
+    {
+        var footerText = fs.readFileSync('./data/footer.txt', 'utf8');
+        response.write(footerText);
     }
 }
 
