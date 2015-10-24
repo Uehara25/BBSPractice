@@ -3,21 +3,17 @@ var http = require("http");
 var querystring = require("querystring");
 
 /*   http.Serverオブジェクトの作成   */
-var server = http.createServer();
+var server = http.createServer(onRequest);
 
 /*   サーバーの情報を格納する変数の宣言   */
 var ADDRESS = 'localhost';
 var PORT = '5000';
 
-server.on(onRequest);
-
 function onRequest(request, response){
-    if(response.url == '/posted'){
-        // 送信した時の処理
-    }else if(response.url == '/'){
+    if(response.url == '/'){
         // 普通にサイトに来た時の処理
     }else{
-        // それ以外のサイトに来た時の処理
+        // 存在しない場所にアクセスした場合
     }
 
     if(request.method != 'POST'){
