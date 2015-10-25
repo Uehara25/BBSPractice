@@ -6,6 +6,8 @@ var http = require("http")
 var ADDRESS = 'localhost'
     ,PORT = '5000';
 
+var NGWords = fs.readFileSync("./data/NGWords.txt", 'utf8').split(",");
+
 var server = http.createServer(onRequest);
 
 function onRequest(request, response){
@@ -27,14 +29,17 @@ function onRequest(request, response){
             });
             request.on('end',function(){
                 var query = querystring.parse(request.data);
+
                 var author = escapeHtmlSpecialChar(query.author);
                 var maintext = escapeHtmlSpecialChar(query.maintext);
+                author = replaceNGWords(author);
                 maintext = maintext.replace(/(\r\n|\n|\r)/g,'<br>');
+                maintext = replaceNGWords(maintext);
                 data = author + '\n' + maintext + '\n';
                 fs.appendFile('./data/data.txt', data,'utf8');
                 sendResponse();
             });
-        }   
+        }
     }
 
     function sendResponse()
@@ -77,6 +82,16 @@ function onRequest(request, response){
             return text;
         }
     }
+
+    function replaceNGWords(text)
+    {
+        for(word in NGWords){
+            text = text.replace(NGWords[word], Array(NGWords[word].length + 1).join("*"));
+            console.log(NGWords[word]);
+        }
+        return text;
+    }
+
     function writeHeader()
     {
         var headerText = fs.readFileSync('./data/header.txt', 'utf8');
