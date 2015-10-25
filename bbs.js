@@ -27,7 +27,10 @@ function onRequest(request, response){
             });
             request.on('end',function(){
                 var query = querystring.parse(request.data);
-                data = query.author + '\n' + query.maintext .replace(/(\r\n|\n|\r)/g,'<br>') + '\n';
+                var author = escapeHtmlSpecialChar(query.author);
+                var maintext = escapeHtmlSpecialChar(query.maintext);
+                maintext = maintext.replace(/(\r\n|\n|\r)/g,'<br>');
+                data = author + '\n' + maintext + '\n';
                 fs.appendFile('./data/data.txt', data,'utf8');
                 sendResponse();
             });
@@ -61,6 +64,18 @@ function onRequest(request, response){
             writeFooter();
             response.end();
         })
+    }
+
+    function escapeHtmlSpecialChar(text)
+    {
+        if(text === undefined){
+            return '';
+        }else{
+            text = text.replace(/&/g, '&amp;');
+            text = text.replace(/</g, '&lt');
+            text = text.replace(/>/g, '&gt;');
+            return text;
+        }
     }
     function writeHeader()
     {
